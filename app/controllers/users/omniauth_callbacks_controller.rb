@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
+  skip_before_action :verify_authenticity_token, :only => [:azureactivedirectory]
   # You should configure your model like this:
   # devise :omniauthable, omniauth_providers: [:twitter]
 
@@ -12,9 +13,9 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   # https://github.com/plataformatec/devise#omniauth
 
   # GET|POST /resource/auth/twitter
-  # def passthru
-  #   super
-  # end
+  def passthru
+    super
+  end
 
   # GET|POST /users/auth/twitter/callback
   # def failure
@@ -28,7 +29,15 @@ class Users::OmniauthCallbacksController < Devise::OmniauthCallbacksController
   #   super(scope)
   # end
 
-  def azure_activedirectory
-    
+  def azureactivedirectory
+    auth = request.env["omniauth.auth"]
+    user = User.create_with_omniauth(auth)
+    if user.present?
+      session[:user_id] = user.id
+      sign_in user
+      redirect_to root_path, notice: 'User created with outlook'
+    else
+      redirect_to new_user_registration_path, notice: 'Invalid email or password'
+    end
   end
 end
